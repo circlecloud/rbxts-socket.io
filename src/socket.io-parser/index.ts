@@ -209,7 +209,7 @@ export class Decoder extends Emitter<any, any> {
     let i = 0;
     // look up type
     const p: Packet = {
-      packetType: tonumber(str.sub(0, 1))!,
+      packetType: tonumber(str.sub(++i, i))!,
     } as Packet;
 
     if (PacketType[p.packetType] === undefined) {
@@ -217,36 +217,37 @@ export class Decoder extends Emitter<any, any> {
     }
 
     // look up namespace (if any)
-    if ("/" === str.sub(i + 1, i + 1 + 1)) {
+    if ("/" === str.sub(i + 1, i + 1)) {
       const start = i + 1;
       while (++i) {
-        const c = str.sub(i, i + 1);
+        const c = str.sub(i, i);
         if ("," === c) break;
         if (i === str.size()) break;
       }
-      p.nsp = str.sub(start, i);
+      p.nsp = str.sub(start, i - 1);
     } else {
       p.nsp = "/";
     }
 
     // look up id
-    const nextChar = str.sub(i + 1, i + 1 + 1);
-    if ("" !== nextChar && tonumber(nextChar)) {
+    const nextChar = str.sub(i + 1, i + 1);
+    if ("" !== nextChar && tonumber(nextChar) === undefined) {
       const start = i + 1;
-      while (++i) {
-        const c = str.sub(i, i + 1);
-        if (undefined === c || !tonumber(c)) {
+      while (++i < str.size()) {
+        const c = str.sub(i, i);
+        if (undefined === c || tonumber(c) === undefined) {
           --i;
           break;
         }
         if (i === str.size()) break;
       }
-      p.id = tonumber(str.sub(start, i + 1));
+      p.id = tonumber(str.sub(start, i));
     }
 
+    let data = str.sub(++i, -1)
     // look up json data
-    if (str.sub(++i, ++i + 1)) {
-      const payload = this.tryParse(str.sub(i));
+    if (data) {
+      const payload = this.tryParse(data);
       if (Decoder.isPayloadValid(p.packetType, payload)) {
         p.data = payload;
       } else {

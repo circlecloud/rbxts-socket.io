@@ -67,7 +67,7 @@ export class Roblox extends Polling {
             // this.writable = false;
             const payload = encodePayload(this.sendQueue)
             this.sendQueue.clear()
-            // $debug('flush sendQueue', this.requestTimes, payload)
+            // $debug('flush sendQueue', payload)
             this.doWrite(payload, () => {
                 this.writable = true;
                 this.emitReserved("drain");
@@ -87,7 +87,7 @@ export class Roblox extends Polling {
     }
     doPoll(): void {
         try {
-            // $debug('Roblox.doPoll', this.requestTimes, this.uri())
+            // $debug('Roblox.doPoll', this.uri())
             RobloxGlobalConfig.waitCanSend()
             const response = axios.get(this.uri())
             RobloxGlobalConfig.increment()

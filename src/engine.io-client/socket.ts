@@ -577,7 +577,7 @@ export class SocketWithoutUpgrade extends Emitter<any, any> {
      */
     private _getWritablePackets() {
         // ROBLOXPATCH ignore check buff
-        const shouldCheckPayloadSize = true
+        const shouldCheckPayloadSize = false
         // const shouldCheckPayloadSize =
         //     this._maxPayload &&
         //     this.transport.getName() === "polling" &&

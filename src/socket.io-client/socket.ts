@@ -581,7 +581,7 @@ export class Socket<
         }
         const packet = this._queue[0];
         if (packet.pending && !force) {
-            // $debug("packet [%d] has already been sent and is waiting for an ack", packet.id, );
+            // $debug("packet [%d] has already been sent and is waiting for an ack", packet.id,);
             return;
         }
         packet.pending = true;

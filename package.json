@@ -1,0 +1,36 @@
+{
+	"name": "@rbxts/socket.io",
+	"version": "1.0.0",
+	"description": "",
+	"main": "out/init.lua",
+	"scripts": {
+		"build": "rbxtsc",
+		"watch": "rbxtsc -w",
+		"prepublishOnly": "pnpm run build"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"types": "out/index.d.ts",
+	"files": [
+		"out",
+		"!**/*.tsbuildinfo"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"packageManager": "pnpm@9.13.2+sha512.88c9c3864450350e65a33587ab801acf946d7c814ed1134da4a924f6df5a2120fd36b46aab68f7cd1d413149112d53c7db3a4136624cfd00ff1846a0c6cef48a",
+	"devDependencies": {
+		"@rbxts/compiler-types": "3.0.0-types.0",
+		"@rbxts/types": "^1.0.813",
+		"@typescript-eslint/eslint-plugin": "^8.16.0",
+		"@typescript-eslint/parser": "^8.16.0",
+		"eslint": "^9.16.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.2.1",
+		"eslint-plugin-roblox-ts": "^0.0.36",
+		"prettier": "^3.4.1",
+		"roblox-ts": "^3.0.0",
+		"typescript": "^5.7.2"
+	}
+}

@@ -107,5 +107,6 @@ export {
     // NodeWebSocket,
     // WebSocket,
     // WebTransport,
-    RobloxXHR
+    RobloxXHR,
+    RobloxGlobalConfig
 } from "../engine.io-client";

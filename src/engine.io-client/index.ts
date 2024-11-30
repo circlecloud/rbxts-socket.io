@@ -13,7 +13,7 @@ export { installTimerFunctions } from "./util";
 export { parse } from "./contrib/parseuri";
 export { nextTick } from "./globals.node";
 
-export { Roblox as RobloxXHR } from "./transports/polling-roblox";
+export { Roblox as RobloxXHR, RobloxGlobalConfig } from "./transports/polling-roblox";
 // export { XHR as NodeXHR } from "./transports/polling-xhr.node";
 // export { XHR } from "./transports/polling-xhr";
 // export { WS as NodeWebSocket } from "./transports/websocket.node";

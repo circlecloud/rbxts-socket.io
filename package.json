@@ -1,7 +1,7 @@
 {
 	"name": "@rbxts/socket.io",
-	"version": "1.0.0",
-	"description": "",
+	"version": "1.0.1",
+	"description": "A full implementation of Socket.IO on Roblox.",
 	"main": "out/init.lua",
 	"scripts": {
 		"build": "rbxtsc",

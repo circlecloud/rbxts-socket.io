@@ -5,6 +5,7 @@ import { encodePayload, Packet } from "../../engine.io-parser";
 import { CloseDetails } from "../transport";
 
 const RunService = game.GetService('RunService')
+
 export class RobloxGlobalConfig {
     /**
      * Max request per minute
@@ -22,18 +23,18 @@ export class RobloxGlobalConfig {
     private static requestTimes = 0
     static {
         RunService.Heartbeat.Connect((dt) => {
-            RobloxGlobalConfig.resetTime -= dt
-            if (RobloxGlobalConfig.resetTime < 0) {
-                RobloxGlobalConfig.resetTime = RobloxGlobalConfig.REQUEST_TIMES_RESET_INTERVAL
-                RobloxGlobalConfig.requestTimes = 0
+            this.resetTime -= dt
+            if (this.resetTime < 0) {
+                this.resetTime = this.REQUEST_TIMES_RESET_INTERVAL
+                this.requestTimes = 0
             }
         })
     }
     public static increment() {
-        RobloxGlobalConfig.requestTimes++
+        this.requestTimes++
     }
     public static waitCanSend() {
-        while (RobloxGlobalConfig.requestTimes >= RobloxGlobalConfig.MAX_REQUEST_PER_INTERVAL) {
+        while (this.requestTimes >= this.MAX_REQUEST_PER_INTERVAL) {
             RunService.Heartbeat.Wait()
         }
     }
@@ -44,10 +45,6 @@ export class Roblox extends Polling {
     private sendQueue: Packet[] = []
     constructor(opts: Partial<SocketOptions>) {
         super(opts)
-        game.BindToClose(() => {
-            this.running = false
-            this.flush()
-        })
 
         task.delay(0, () => {
             while (this.running) {
@@ -59,6 +56,7 @@ export class Roblox extends Polling {
     }
     protected override onClose(details?: CloseDetails): void {
         super.onClose(details)
+        this.flush()
         this.running = false
     }
     private flush() {
@@ -86,28 +84,34 @@ export class Roblox extends Polling {
         }
     }
     doPoll(): void {
+        let response
         try {
-            // $debug('Roblox.doPoll', this.uri())
+            const requestUrl = this.uri()
+            // $debug('Roblox.doPoll', requestUrl)
             RobloxGlobalConfig.waitCanSend()
-            const response = axios.get(this.uri())
+            response = axios.get(requestUrl)
             RobloxGlobalConfig.increment()
-            // $debug('Roblox.doPoll response', response)
+            // $debug('\n', '<===== Roblox.doPoll', requestUrl, '\n', response.StatusCode, response.StatusMessage, '\n', response.Body)
+            if (!response.Success || response.StatusCode !== 200)
+                throw `response StatusCode ${response.StatusCode} not eq 200 Body "${response.Body}"`
             this.onData(response.Body)
         } catch (err) {
-            this.onError('HttpService.GetAsync error', err, err)
+            this.onError(`doPoll error: ${err}`, err, response)
         }
     }
     doWrite(data: string, callback: () => void): void {
+        let response
         try {
-            // $debug('Roblox.doWrite', this.uri(), data, debug.traceback())
-            if (!data) { return }
-            const response = axios.post(this.uri(), data)
+            const requestUrl = this.uri()
+            // $debug('Roblox.doWrite', requestUrl, data)
+            response = axios.post(requestUrl, data)
             RobloxGlobalConfig.increment()
-            // $debug('Roblox.doWrite response', response)
-            if (!response.Success || response.StatusCode !== 200 || response.Body !== 'ok') throw `response not eq ok`
+            // $debug('\n', '=====> Roblox.doWrite', requestUrl, '\n', data, '\n', response.StatusCode, response.StatusMessage, '\n', response.Body)
+            if (!response.Success || response.StatusCode !== 200 || response.Body !== 'ok')
+                throw `response body "${response.Body}" not eq ok`
             callback()
         } catch (err) {
-            this.onError('HttpService.PostAsync error', err, err)
+            this.onError(`doWrite error: ${err}`, err, { data, response })
         }
     }
 }

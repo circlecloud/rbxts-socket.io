@@ -38,7 +38,6 @@ interface TransportReservedEvents {
 type TransportState = "opening" | "open" | "closed" | "pausing" | "paused";
 
 export abstract class Transport extends Emitter<TransportReservedEvents, any> {
-    protected __INSTANCE_NAME = 'Engine.IO Transport extends Emitter';
     public query: Record<string, string>;
     public writable: boolean = false;
 

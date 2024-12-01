@@ -209,15 +209,15 @@ export class Emitter<
         let callbacks = this.__callbacks.get(ev)
 
         if (callbacks) {
-            for (const callback of callbacks) {
-                task.spawn(() => {
+            task.spawn(() => {
+                for (const callback of callbacks) {
                     if (typeIs(callback, "function")) {
                         callback(...args)
                     } else {
                         (callback as ECallback<never>).cb(...args)
                     }
-                })
-            }
+                }
+            })
         }
 
         return this;

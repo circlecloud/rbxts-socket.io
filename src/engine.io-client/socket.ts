@@ -242,7 +242,6 @@ type TransportCtor = { new(o: any): Transport };
 type BaseSocketOptions = Omit<SocketOptions, "transports">
 
 export class SocketWithoutUpgrade extends Emitter<any, any> {
-    protected __INSTANCE_NAME = 'Engine.IO SocketWithoutUpgrade extends Emitter'
     public id: string | undefined
     public transport: Transport = undefined as unknown as Transport
     public binaryType: BinaryType = defaultBinaryType;
@@ -848,7 +847,6 @@ export class SocketWithoutUpgrade extends Emitter<any, any> {
  * @see Socket
  */
 export class SocketWithUpgrade extends SocketWithoutUpgrade {
-    protected __INSTANCE_NAME = 'Engine.IO SocketWithUpgrade extends SocketWithoutUpgrade';
     private _upgrades: string[] = [];
 
     override onOpen() {
@@ -1027,7 +1025,6 @@ export class SocketWithUpgrade extends SocketWithoutUpgrade {
  * @see SocketWithUpgrade
  */
 export class Socket extends SocketWithUpgrade {
-    protected __INSTANCE_NAME = 'Engine.IO Socket extends SocketWithUpgrade';
     constructor(uri?: string, opts?: SocketOptions);
     constructor(opts: SocketOptions);
     constructor(uri?: string | SocketOptions, opts: SocketOptions = {} as SocketOptions) {

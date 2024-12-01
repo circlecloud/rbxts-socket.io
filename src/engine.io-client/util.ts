@@ -1,5 +1,7 @@
 // import { globalThisShim as globalThis } from "./globals.node.js";
 
+import { uuid } from "../polyfill"
+
 // import { Socket } from "./socket";
 
 // export function pick(obj, ...attr) {
@@ -69,14 +71,5 @@ const BASE64_OVERHEAD = 1.33;
  * Generates a random 8-characters string.
  */
 export function randomString() {
-    return (
-        tostring(os.time()).sub(4) +
-        tostring(math.random(1000, 9999)).sub(2, 4)
-    );
+    return uuid().sub(1, 8)
 }
-// function randomString()
-//   local timestamp = tostring(os.time()):sub(4)
-//   math.randomseed(os.time())
-//   local randomPart = tostring(math.random(1000, 9999)):sub(2, 4)
-//   return timestamp .. randomPart
-// end

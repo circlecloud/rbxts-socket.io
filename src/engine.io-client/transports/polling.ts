@@ -1,6 +1,7 @@
 import { Transport } from "../transport";
 // import { randomString } from "../util";
 import { encodePayload, decodePayload, Packet } from "../../engine.io-parser";
+import { randomString } from "../util";
 // import debugModule from "debug"; // debug()
 
 // const debug = debugModule("engine.io-client:polling"); // debug()
@@ -164,12 +165,12 @@ export abstract class Polling extends Transport {
      */
     protected uri() {
         const schema = this.opts.secure ? "https" : "http";
-        const query: { b64?: number; sid?: string } = this.query || {};
+        const query: { b64?: number; sid?: string, [key: string]: unknown } = this.query || {};
 
         // cache busting is forced
-        // if (false !== this.opts.timestampRequests) {
-        //     query[this.opts.timestampParam] = randomString();
-        // }
+        if (false !== this.opts.timestampRequests) {
+            query[this.opts.timestampParam] = randomString();
+        }
 
         if (!this.supportsBinary && !query.sid) {
             query.b64 = 1;

@@ -627,8 +627,8 @@ export class Socket<
     private _sendConnectPacket(data: Record<string, unknown>) {
         this.packet({
             packetType: PacketType.CONNECT,
-            data: this._pid
-                ? { pid: this._pid, offset: this._lastOffset, ...data }
+            data: this._pid !== ""
+                ? { pid: this._pid, offset: this._lastOffset, ...(data || {}) }
                 : data,
         });
     }

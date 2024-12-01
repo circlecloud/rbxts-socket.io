@@ -1,5 +1,5 @@
 import { Emitter } from "../component-emitter";
-import { JSON } from "../polyfill";
+import { JSON, Number } from "../polyfill";
 // import { deconstructPacket, reconstructPacket } from "./binary.js";
 // import { isBinary, hasBinary } from "./is-binary.js";
 // import debugModule from "debug"; // debug()
@@ -62,21 +62,21 @@ export class Encoder {
    * @param {Object} obj - packet object
    */
   public encode(obj: Packet) {
-    // $debug("socket.io-parser encoding packet", obj);
+    // $debug("encoding packet %j", obj);
 
-    if (obj.packetType === PacketType.EVENT || obj.packetType === PacketType.ACK) {
-      // if (hasBinary(obj)) {
-      //   return this.encodeAsBinary({
-      //     type:
-      //       obj.type === PacketType.EVENT
-      //         ? PacketType.BINARY_EVENT
-      //         : PacketType.BINARY_ACK,
-      //     nsp: obj.nsp,
-      //     data: obj.data,
-      //     id: obj.id,
-      //   });
-      // }
-    }
+    // if (obj.packetType === PacketType.EVENT || obj.packetType === PacketType.ACK) {
+    //   if (hasBinary(obj)) {
+    //     return this.encodeAsBinary({
+    //       type:
+    //         obj.type === PacketType.EVENT
+    //           ? PacketType.BINARY_EVENT
+    //           : PacketType.BINARY_ACK,
+    //       nsp: obj.nsp,
+    //       data: obj.data,
+    //       id: obj.id,
+    //     });
+    //   }
+    // }
     return [this.encodeAsString(obj)];
   }
 
@@ -109,7 +109,7 @@ export class Encoder {
 
     // json data
     if (undefined !== obj.data) {
-      str += JSON.stringify(obj.data);
+      str += JSON.stringify(obj.data) //, this.replacer);
     }
 
     // $debug("encoded %j as %s", obj, str);
@@ -179,8 +179,8 @@ export class Decoder extends Emitter<any, any> {
       //   }
       // } else {
       //   // non-binary full packet
-      // }
       super.emitReserved("decoded", packet);
+      // }
       // } else if (obj.base64) {
       //   // raw binary data
       //   if (!this.reconstructor) {
@@ -209,12 +209,26 @@ export class Decoder extends Emitter<any, any> {
     let i = 0;
     // look up type
     const p: Packet = {
-      packetType: tonumber(str.sub(++i, i))!,
+      packetType: Number(str.sub(++i, i))!,
     } as Packet;
 
     if (PacketType[p.packetType] === undefined) {
       throw ("unknown packet type " + p.packetType);
     }
+
+    // look up attachments if type binary
+    // if (
+    //   p.type === PacketType.BINARY_EVENT ||
+    //   p.type === PacketType.BINARY_ACK
+    // ) {
+    //   const start = i + 1;
+    //   while (str.charAt(++i) !== "-" && i != str.length) {}
+    //   const buf = str.substring(start, i);
+    //   if (buf != Number(buf) || str.charAt(i) !== "-") {
+    //     throw new Error("Illegal attachments");
+    //   }
+    //   p.attachments = Number(buf);
+    // }
 
     // look up namespace (if any)
     if ("/" === str.sub(i + 1, i + 1)) {
@@ -231,17 +245,17 @@ export class Decoder extends Emitter<any, any> {
 
     // look up id
     const nextChar = str.sub(i + 1, i + 1);
-    if ("" !== nextChar && tonumber(nextChar) === undefined) {
+    if ("" !== nextChar && Number(nextChar) !== undefined) {
       const start = i + 1;
       while (++i < str.size()) {
         const c = str.sub(i, i);
-        if (undefined === c || tonumber(c) === undefined) {
+        if (undefined === c || Number(c) === undefined) {
           --i;
           break;
         }
         if (i === str.size()) break;
       }
-      p.id = tonumber(str.sub(start, i));
+      p.id = Number(str.sub(start, i));
     }
 
     let data = str.sub(++i, -1)
@@ -356,7 +370,7 @@ function isNamespaceValid(nsp: unknown) {
 //   };
 
 function isAckIdValid(id: unknown) {
-  return id === undefined || tonumber(id);
+  return id === undefined || Number(id);
 }
 
 // see https://stackoverflow.com/questions/8511281/check-if-a-value-is-an-object-in-javascript

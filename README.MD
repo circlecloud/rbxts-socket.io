@@ -28,9 +28,9 @@ task.delay(0, () => {
 });
 ```
 
-### Roblox request timeout is 120 seconds.
+### Roblox request unstable.
 
-So on Server side you can set pingInterval to `90000-110000`
+So on Server side you need enable [connection-state-recovery](https://socket.io/docs/v4/connection-state-recovery)
 
 ```ts
 import { createServer } from "http";
@@ -38,15 +38,39 @@ import { Server } from "socket.io";
 
 const server = createServer();
 const io = new Server(server, {
-	pingInterval: 110000,
-	cors: {
-		origin: "*",
-		credentials: true,
+	// enable state recovery
+	connectionStateRecovery: {
+		// the backup duration of the sessions and the packets
+		maxDisconnectionDuration: 2 * 60 * 1000,
+		// whether to skip middlewares upon successful recovery
+		skipMiddlewares: true,
 	},
+	pingInterval: 50000,
+});
+io.on("connection", (socket) => {
+	if (socket.recovered) {
+		// recovery was successful: socket.id, socket.rooms and socket.data were restored
+	} else {
+		// new or unrecoverable session
+	}
 });
 ```
 
-> more long interval and send packet one time can reduce request times to prevent triggering restrictions.
+```ts
+const client = io.connect("http://localhost:3000", {
+	reconnectionDelay: 10000, // defaults to 1000
+	reconnectionDelayMax: 10000, // defaults to 5000
+});
+socket.on("connect", () => {
+	if (socket.recovered) {
+		// any event missed during the disconnection period will be received now
+	} else {
+		// new or unrecoverable session
+	}
+});
+```
+
+> more long interval and send packet one time can reduce request times to prevent triggering roblox request restrictions.
 
 You can config use RobloxGlobalConfig
 
@@ -101,16 +125,16 @@ socket.on("message", (message) => {
 namespace support
 
 ```ts
+import { RunService } from "@rbxts/services";
 import { io } from "@rbxts/socket.io";
 
-const socket = io("http://localhost:3000");
-socket.on("connect", () => {
-	print("connected");
-});
-socket.on("disconnect", () => {
-	print("disconnected");
-});
-socket.on("message", (message) => {
-	print(message);
+const manager = new Manager("http://localhost:3000");
+
+const socket = manager.socket("/"); // main namespace
+const adminSocket = manager.socket("/admin"); // admin namespace
+
+socket.emit("players", { onlines: Players.GetChildren().size() });
+adminSocket.on("kick", (uid, reason) => {
+	Players.GetPlayerByUserId(uid)?.Kick(reason);
 });
 ```

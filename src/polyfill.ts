@@ -2,12 +2,10 @@ const HttpService = game.GetService('HttpService')
 
 export class Error {
     [key: string]: unknown
-    constructor(message: string) {
-        this.message = message
-        // $warn(debug.traceback(message, 2))
+    constructor(public message: string) {
     }
     toString(): string {
-        return JSON.stringify(this)
+        return this.message as string
     }
 }
 

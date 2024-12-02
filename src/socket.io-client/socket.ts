@@ -641,7 +641,7 @@ export class Socket<
      */
     private onerror(err: Error): void {
         if (!this.connected) {
-            (this.emitReserved as Callback)("connect_error", err);
+            this.emitReserved("connect_error", err);
         }
     }
 
@@ -821,7 +821,7 @@ export class Socket<
     private onconnect(id: string, pid: string) {
         // $debug("socket connected with id %s", id);
         this.id = id;
-        this.recovered = pid as unknown as boolean && this._pid === pid;
+        this.recovered = pid !== '' && this._pid === pid;
         this._pid = pid; // defined only if connection state recovery is enabled
         this.connected = true;
         this.emitBuffered();

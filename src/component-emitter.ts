@@ -83,8 +83,6 @@ export class Emitter<
     EmitEvents extends EventsMap,
     ReservedEvents extends EventsMap = {}
 > {
-    // private __events: Map<string, Signal> = new Map();
-    // private __connections: Map<string, RBXScriptConnection> = new Map();
     private __callbacks: Map<string, ECallback<ReservedOrUserListener<ReservedEvents, ListenEvents, never>>[]> = new Map();
 
     constructor() {
@@ -98,19 +96,7 @@ export class Emitter<
     on<Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>>(
         ev: Ev,
         listener: ReservedOrUserListener<ReservedEvents, ListenEvents, Ev>
-    ) {
-        // if (!this.__events.has(ev)) {
-        //     this.__events.set(ev, new Signal(ev))
-        //     this.__connections.set(ev, this.__events.get(ev)!.Event.Connect((...args: unknown[]) => {
-        //         this.__callbacks.get(ev)?.forEach(callback => {
-        //             if (typeIs(callback, "function")) {
-        //                 callback(...args)
-        //             } else {
-        //                 callback.cb(...args)
-        //             }
-        //         })
-        //     }))
-        // }
+    ): this {
         if (!this.__callbacks.has(ev)) {
             this.__callbacks.set(ev, [])
         }
@@ -127,7 +113,7 @@ export class Emitter<
     once<Ev extends ReservedOrUserEventNames<ReservedEvents, ListenEvents>>(
         ev: Ev,
         listener: ReservedOrUserListener<ReservedEvents, ListenEvents, Ev>
-    ) {
+    ): this {
         const on = (...args: unknown[]) => {
             this.off(ev, listener);
             (listener as Callback)(...(args as unknown[]))
@@ -162,17 +148,16 @@ export class Emitter<
         let cb: ECallback<unknown>;
         for (var i = 0; i < callbacks.size(); i++) {
             cb = callbacks[i];
-            if ((typeOf(cb) === "function" && cb === (listener as unknown)) || (cb as OnceCallback<unknown>).fn === (listener as unknown)) {
+            if (typeOf(cb) !== "function") {
+                cb = (cb as OnceCallback<unknown>).fn
+            }
+            if (cb === listener as unknown) {
                 callbacks.remove(i);
                 break;
             }
         }
 
         if (callbacks.size() === 0) {
-            // this.__events.get(ev)?.Destroy()
-            // this.__events.delete(ev)
-            // this.__connections.get(ev)?.Disconnect()
-            // this.__connections.delete(ev)
             this.__callbacks.delete(ev)
         }
 
@@ -205,17 +190,16 @@ export class Emitter<
         ev: Ev,
         ...args: unknown[]
     ) {
-        // this.__events.get(ev)?.Fire(...args)
         let callbacks = this.__callbacks.get(ev)
 
         if (callbacks) {
+            // ROBLOXPATCH use spawn to avoid stack overflow
             task.spawn(() => {
-                for (const callback of callbacks) {
-                    if (typeIs(callback, "function")) {
-                        callback(...args)
-                    } else {
-                        (callback as ECallback<never>).cb(...args)
+                for (let callback of callbacks) {
+                    if (typeOf(callback) !== "function") {
+                        callback = (callback as OnceCallback<Callback>).fn
                     }
+                    (callback as Callback)(...args)
                 }
             })
         }

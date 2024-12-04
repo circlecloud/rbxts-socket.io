@@ -119,6 +119,13 @@ interface SocketReservedEvents {
     ) => void;
 }
 
+// ROBLOXPATCH Function Can't with property
+type ECallback = {
+    fn: Callback,
+    withError?: boolean
+}
+type AckCallback = Callback | ECallback;
+
 /**
  * A Socket is the fundamental class for interacting with the server.
  *
@@ -265,7 +272,8 @@ export class Socket<
      */
     private acks: Record<
         string,
-        ((...args: any[]) => void) & { withError?: boolean }
+        // ROBLOXPATCH
+        AckCallback
     > = {};
     private flags: Flags = {};
     private subs?: Array<VoidFunction>;
@@ -300,7 +308,7 @@ export class Socket<
      *   console.log(socket.disconnected); // true
      * });
      */
-    public isDisconnected(): boolean {
+    public disconnected(): boolean {
         return !this.connected;
     }
 
@@ -339,7 +347,7 @@ export class Socket<
      *   console.log(socket.active); // true
      * });
      */
-    public getActive(): boolean {
+    public active(): boolean {
         // $debug("socket active %s", this.subs);
         return this.subs as unknown as boolean;
     }
@@ -432,11 +440,12 @@ export class Socket<
         // packet.options.compress = this.flags.compress !== false;
 
         // event ack callback
-        if ("function" === typeOf(args[args.size() - 1])) {
+        const lastArg = args[args.size() - 1] as AckCallback;
+        if (typeIs(lastArg, "function") || (typeIs(lastArg, "table") && typeIs(lastArg.fn, "function"))) {
             const id = this.ids++;
             // $debug("emitting packet with ack id %d", id);
 
-            const ack = args.pop() as (...args: any[]) => void;
+            const ack = args.pop() as AckCallback;
             this._registerAckCallback(id, ack);
             packet.id = id;
         }
@@ -462,14 +471,15 @@ export class Socket<
     /**
      * @private
      */
-    private _registerAckCallback(id: number, ack: (...args: any[]) => void) {
+    private _registerAckCallback(id: number, ackObj: AckCallback) {
         const timeout = this.flags.timeout ?? this._opts.ackTimeout;
         if (timeout === undefined) {
-            this.acks[id] = ack;
+            this.acks[id] = ackObj;
             return;
         }
-
-        const timer = this.io.setTimeoutFn!(() => {
+        // ROBLOXPATCH
+        const ack = typeIs(ackObj, "function") ? ackObj : ackObj.fn;
+        const timer = this.io.setTimeoutFn(() => {
             delete this.acks[id];
             for (let i = 0; i < this.sendBuffer.size(); i++) {
                 if (this.sendBuffer[i].id === id) {
@@ -482,12 +492,14 @@ export class Socket<
         }, timeout);
 
         const fn = (...args: unknown[]) => {
-            this.io.clearTimeoutFn!(timer);
+            this.io.clearTimeoutFn(timer);
             ack(...args);
         };
-        fn.withError = true;
+        // fn.withError = true;
 
         this.acks[id] = fn;
+        // ROBLOXPATCH
+        this.acks[id] = { fn, withError: true };
     }
 
     /**
@@ -514,8 +526,9 @@ export class Socket<
             const fn = (arg1: defined, arg2: defined) => {
                 return arg1 ? reject(arg1) : resolve(arg2);
             };
-            fn.withError = true;
-            args.push(fn);
+            // fn.withError = true;
+            // ROBLOXPATCH
+            args.push({ fn, withError: true });
             this.emit(ev, ...args);
         });
     }
@@ -679,8 +692,9 @@ export class Socket<
                 const ack = this.acks[id];
                 delete this.acks[id];
 
-                if (ack.withError) {
-                    ack(new Error("socket has been disconnected"));
+                // ROBLOXPATCH
+                if (!typeIs(ack, "function") && ack.withError) {
+                    ack.fn(new Error("socket has been disconnected"));
                 }
             }
         }
@@ -807,10 +821,13 @@ export class Socket<
         delete this.acks[packet.id!];
         // $debug("calling ack %s with %j", packet.id, packet.data);
         const data = packet.data as Array<defined>
-        if (ack.withError) {
-            data.unshift(undefined as unknown as defined);
+
+        // ROBLOXPATCH
+        if (typeIs(ack, "function")) {
+            ack(...data);
+        } else if (ack.withError) {
+            ack.fn(undefined, ...data)
         }
-        ack(...data);
     }
 
     /**
@@ -927,19 +944,19 @@ export class Socket<
         return this;
     }
 
-    // /**
-    //  * Sets a modifier for a subsequent event emission that the event message will be dropped when this socket is not
-    //  * ready to send messages.
-    //  *
-    //  * @example
-    //  * socket.volatile.emit("hello"); // the server may or may not receive it
-    //  *
-    //  * @returns self
-    //  */
-    // public get volatile(): this {
-    //     this.flags.volatile = true;
-    //     return this;
-    // }
+    /**
+     * Sets a modifier for a subsequent event emission that the event message will be dropped when this socket is not
+     * ready to send messages.
+     *
+     * @example
+     * socket.volatile.emit("hello"); // the server may or may not receive it
+     *
+     * @returns self
+     */
+    public volatile(): this {
+        this.flags.volatile = true;
+        return this;
+    }
 
     /**
      * Sets a modifier for a subsequent event emission that the callback will be called with an error when the
@@ -1132,8 +1149,7 @@ export class Socket<
         if (this._anyOutgoingListeners && this._anyOutgoingListeners.size()) {
             const listeners = this._anyOutgoingListeners;
             for (const listener of listeners) {
-                const data = packet.data as Array<defined>
-                listener(...data);
+                listener(...packet.data as Array<defined>);
             }
         }
     }

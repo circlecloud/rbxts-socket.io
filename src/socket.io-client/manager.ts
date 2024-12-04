@@ -470,7 +470,7 @@ export class Manager<
             // $debug("new namespace", nsp);
             socket = new Socket(this, nsp, opts);
             this.nsps[nsp] = socket;
-        } else if (this._autoConnect && !socket.getActive()) {
+        } else if (this._autoConnect && !socket.active()) {
             // $debug("reconnect", nsp);
             socket.connect();
         }
@@ -486,7 +486,7 @@ export class Manager<
      */
     _destroy(socket: Socket): void {
         for (const [nsp, socket] of this.nsps as unknown as Map<string, Socket>) {
-            if (socket.getActive()) {
+            if (socket.active()) {
                 // $debug("socket %s is still active, skipping close", nsp);
                 return;
             }
